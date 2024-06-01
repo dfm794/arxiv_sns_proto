@@ -9,6 +9,9 @@ from .db import get_db
 
 bp = Blueprint('auth', __name__, url_prefix='/auth')
 
+# Routines for logging in, registering, and logging out
+# Routines were derived from the flask tutorial at https://flask.palletsprojects.com/en/2.3.x/tutorial/
+
 @bp.route('/login', methods=('GET', 'POST'))
 def login():
     if request.method == 'POST':
