@@ -12,13 +12,15 @@ bp = Blueprint('searches', __name__)
 def index():
     db = get_db()
     print(f'g.user: {g.user}')
-    searches = db.execute(
+    db.execute(
         'SELECT s.id, search_key, search_result, created, author_id, username'
-        ' FROM search s JOIN user u ON s.author_id = u.id'
-        ' WHERE author_id = ?'
+        ' FROM search s JOIN "user" u ON s.author_id = u.id'
+        ' WHERE author_id = (%s)'
         ' ORDER BY created DESC',
-        (g.user['id'],)
-    ).fetchall()
+        (g.user[0],)
+    )
+    searches = db.fetchall()
+    print(f'searches: {searches}')
     return render_template('searches/index.html', searches=searches)
 
 @bp.route('/create', methods=('GET', 'POST'))
@@ -37,26 +39,28 @@ def create():
             db = get_db()
             db.execute(
                 'INSERT INTO search (search_key, author_id)'
-                ' VALUES (?, ?)',
-                (search_key, g.user['id'])
+                ' VALUES (%s, %s)',
+                (search_key, g.user[0])
             )
-            db.commit()
+            db.connection.commit()
             return redirect(url_for('searches.index'))
 
     return render_template('searches/create.html')
 
 def get_search(id, check_author=True):
-    search = get_db().execute(
+    db = get_db()
+    db.execute(
         'SELECT s.id, search_key, search_result, created, author_id, username'
-        ' FROM search s JOIN user u ON s.author_id = u.id'
-        ' WHERE s.id = ?',
+        ' FROM search s JOIN "user" u ON s.author_id = u.id'
+        ' WHERE s.id = (%s)',
         (id,)
-    ).fetchone()
+    )
+    search = db.fetchone()
 
     if search is None:
         abort(404, f"Search id {id} doesn't exist.")
 
-    if check_author and search['author_id'] != g.user['id']:
+    if check_author and search['author_id'] != g.user[0]:
         abort(403)
 
     return search
@@ -78,11 +82,11 @@ def update(id):
         else:
             db = get_db()
             db.execute(
-                'UPDATE search SET search_key = ?'
-                ' WHERE id = ?',
+                'UPDATE search SET search_key = (%s)'
+                ' WHERE id = (%s)',
                 (search_key, id)
             )
-            db.commit()
+            db.connection.commit()
             return redirect(url_for('searches.index'))
 
     return render_template('searches/update.html', search=search)
@@ -92,8 +96,8 @@ def update(id):
 def delete(id):
     get_search(id)
     db = get_db()
-    db.execute('DELETE FROM search WHERE id = ?', (id,))
-    db.commit()
+    db.execute('DELETE FROM search WHERE id = (%s)', (id,))
+    db.connection.commit()
     return redirect(url_for('searches.index'))
 
 
