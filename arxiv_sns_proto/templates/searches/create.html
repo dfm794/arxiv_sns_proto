@@ -10,4 +10,11 @@
     <input name="search_key" id="search_key" value="{{ request.form['search_key'] }} " required>
     <input type="submit" value="Save">
   </form>
+  <hr>
+  <div>
+    <p> Here one may enter a new search. Specfic format will change with app development but for now it's just a string.</p>
+    <p> As a resonable example, we may specify author, a time frame, a title or contents</p>
+    <p> for example</p>
+    <p> author: "hinton", before:1992, title:'boltzman', contains:"in physics, a model that" </p>
+  </div>
 {% endblock %}
