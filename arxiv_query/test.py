@@ -123,4 +123,7 @@ def test_arxiv_query_server(host='localhost', queue_name='arxiv_query'):
     print("Results have been stored in the 'arxiv_results.db' SQLite database.")
 
 if __name__ == "__main__":
-    test_arxiv_query_server()
+    #check is the CLOUDAMQP_URL environment variable is set
+    #if it is use it as the url for the server, otherwise use 'localhost'
+    url = os.getenv('CLOUDAMQP_URL', 'localhost')
+    test_arxiv_query_server(host=url)

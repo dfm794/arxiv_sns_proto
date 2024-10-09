@@ -74,7 +74,7 @@ def arxiv_query(search_query, start=0, max_results=10):
 if __name__ == '__main__':
     #check is the RABBITMQ_URL environment variable is set
     #if it is use it as the url for the server, otherwise use 'localhost'
-    url = os.getenv('RABBITMQ_URL', 'localhost')
+    url = os.getenv('CLOUDAMQP_URL', 'localhost')
     server = ArxivQueryServer(url=url)
     #listen for a hangup signal and close the server
     def signal_handler(sig, frame):
