@@ -6,7 +6,9 @@ import sqlite3
 import os
 
 def test_arxiv_query_server(host='localhost', queue_name='arxiv_query'):
-    connection = pika.BlockingConnection(pika.ConnectionParameters(host=host))
+    params = pika.URLParameters(host)
+    connection = pika.BlockingConnection(params)
+    #connection = pika.BlockingConnection(pika.ConnectionParameters(host=host))
     channel = connection.channel()
 
     # Declare a temporary queue for receiving responses
