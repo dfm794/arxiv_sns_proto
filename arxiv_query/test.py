@@ -3,6 +3,7 @@ import json
 import uuid
 import time
 import sqlite3
+import os
 
 def test_arxiv_query_server(host='localhost', queue_name='arxiv_query'):
     connection = pika.BlockingConnection(pika.ConnectionParameters(host=host))
@@ -126,4 +127,5 @@ if __name__ == "__main__":
     #check is the CLOUDAMQP_URL environment variable is set
     #if it is use it as the url for the server, otherwise use 'localhost'
     url = os.getenv('CLOUDAMQP_URL', 'localhost')
+    print(f"Using RabbitMQ server at {url}")
     test_arxiv_query_server(host=url)
