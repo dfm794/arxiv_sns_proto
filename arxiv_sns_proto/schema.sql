@@ -1,5 +1,6 @@
-DROP TABLE IF EXISTS "user";
+DROP TABLE IF EXISTS search_result;
 DROP TABLE IF EXISTS search;
+DROP TABLE IF EXISTS "user";
 
 CREATE TABLE "user" (
   id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
@@ -9,9 +10,18 @@ CREATE TABLE "user" (
 
 CREATE TABLE search (
   id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-  author_id INTEGER NOT NULL,
+  user_id INTEGER NOT NULL,
   created TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  search_key TEXT NOT NULL,
-  search_result TEXT,
-  FOREIGN KEY (author_id) REFERENCES "user" (id)
+  search_query TEXT NOT NULL,
+  FOREIGN KEY (user_id) REFERENCES "user" (id)
+);
+
+CREATE TABLE search_result (
+  id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  search_id INTEGER NOT NULL,
+  title TEXT NOT NULL,
+  authors TEXT[] NOT NULL,
+  arxiv_url TEXT NOT NULL,
+  pdf_url TEXT NOT NULL,
+  FOREIGN KEY (search_id) REFERENCES search (id)
 );

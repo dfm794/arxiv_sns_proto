@@ -6,9 +6,9 @@
 
 {% block content %}
   <form method="post">
-    <label for="search_key">Search Key</label>
-    <input name="search_key" id="search_key"
-      value="{{ request.form['search_key'] or search['search_key'] }}" required>
+    <label for="search_query">Search Query</label>
+    <input name="search_query" id="search_query"
+      value="{{ request.form['search_query'] or search['search_query'] }}" required>
     <input type="submit" value="Save">
   </form>
   <hr>

@@ -12,23 +12,38 @@
     <article class="search">
       <header>
         <div>
-          <h1>{{ search['search_key'] }}</h1>
+          <h1>{{ search['search_query'] }}</h1>
           <div class="about">created on {{ search['created'].strftime('%Y-%m-%d') }}</div>
         </div>
-        {% if g.user['id'] == search['author_id'] %}
+        {% if g.user['id'] == search['user_id'] %}
           <a class="action" href="{{ url_for('searches.update', id=search['id']) }}">Edit</a>
           <a class="action" href="{{ url_for('searches.delete', id=search['id']) }}">Delete</a>
         {% endif %}
       </header>
-      <p class="body">{{ search['search_result'] }}</p>
+      {% if search['results'] %}
+        <h2>Search Results:</h2>
+        {% for result in search['results'] %}
+          <div class="search-result">
+            <h3>{{ result['title'] }}</h3>
+            <p>Authors: {{ result['authors']|join(', ') }}</p>
+            <p>
+              <a href="{{ result['arxiv_url'] }}" target="_blank">arXiv</a> | 
+              <a href="{{ result['pdf_url'] }}" target="_blank">PDF</a>
+            </p>
+          </div>
+          {% if not loop.last %}<hr>{% endif %}
+        {% endfor %}
+      {% else %}
+        <p class="body">No results yet</p>
+      {% endif %}
     </article>
     {% if not loop.last %}
       <hr>
     {% endif %}
   {% endfor %}
   <div>
-    <p> Here one may enter searches that are recorded under the logged in user id</p>
-    <p> As the app develops, search results will appear here as well, but for now just list 'None'</p>
+    <p>Here one may enter searches that are recorded under the logged in user id</p>
+    <p>Search results will appear under each search query</p>
   </div>
 {% endblock %}
 
