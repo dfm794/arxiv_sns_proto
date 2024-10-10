@@ -1,3 +1,7 @@
+import pika
+import json
+import uuid
+import os
 from flask import Blueprint, flash, g, redirect, render_template, request, url_for
 from werkzeug.exceptions import abort
 
@@ -42,6 +46,48 @@ def index():
     print(f'searches_with_results: {searches_with_results}')
     return render_template('searches/index.html', searches=searches_with_results)
 
+def perform_arxiv_search(query_string, max_results=10):
+    url = os.getenv('CLOUDAMQP_URL', 'localhost')
+    if url is not 'localhost':
+            params = pika.URLParameters(url)
+            connection = pika.BlockingConnection(params)
+    else:
+        connection = pika.BlockingConnection()
+    channel = connection.channel()
+
+    result = channel.queue_declare(queue='', exclusive=True)
+    callback_queue = result.method.queue
+
+    corr_id = str(uuid.uuid4())
+    response = None
+
+    def on_response(ch, method, props, body):
+        nonlocal response
+        if corr_id == props.correlation_id:
+            response = json.loads(body)
+
+    channel.basic_consume(
+        queue=callback_queue,
+        on_message_callback=on_response,
+        auto_ack=True
+    )
+
+    channel.basic_publish(
+        exchange='',
+        routing_key='arxiv_query',
+        properties=pika.BasicProperties(
+            reply_to=callback_queue,
+            correlation_id=corr_id,
+        ),
+        body=json.dumps({"query_string": query_string, "max_results": max_results})
+    )
+
+    while response is None:
+        connection.process_data_events()
+    print(f'response: {response}')
+    connection.close()
+    return response
+
 @bp.route('/create', methods=('GET', 'POST'))
 @login_required
 def create():
@@ -62,6 +108,23 @@ def create():
                 (search_query, g.user[0])
             )
             db.connection.commit()
+            
+            # Get the ID of the newly inserted search
+            db.execute('SELECT LASTVAL()')
+            search_id = db.fetchone()[0]
+            
+            # Perform the arXiv search
+            search_results = perform_arxiv_search(search_query)
+            
+            # Insert search results into the database
+            for result in search_results:
+                db.execute(
+                    'INSERT INTO search_result (search_id, title, authors, arxiv_url, pdf_url)'
+                    ' VALUES (%s, %s, %s, %s, %s)',
+                    (search_id, result['title'], result['authors'], result['arxiv_url'], result['pdf_url'])
+                )
+            db.connection.commit()
+            
             return redirect(url_for('searches.index'))
 
     return render_template('searches/create.html')
@@ -100,11 +163,28 @@ def update(id):
             flash(error)
         else:
             db = get_db()
+            
+            # Update the search query
             db.execute(
                 'UPDATE search SET search_query = %s'
                 ' WHERE id = %s',
                 (search_query, id)
             )
+            
+            # Delete old search results
+            db.execute('DELETE FROM search_result WHERE search_id = %s', (id,))
+            
+            # Perform the new arXiv search
+            search_results = perform_arxiv_search(search_query)
+            
+            # Insert new search results into the database
+            for result in search_results:
+                db.execute(
+                    'INSERT INTO search_result (search_id, title, authors, arxiv_url, pdf_url)'
+                    ' VALUES (%s, %s, %s, %s, %s)',
+                    (id, result['title'], result['authors'], result['arxiv_url'], result['pdf_url'])
+                )
+            
             db.connection.commit()
             return redirect(url_for('searches.index'))
 
@@ -115,7 +195,13 @@ def update(id):
 def delete(id):
     get_search(id)
     db = get_db()
+    
+    # Delete associated search results first
+    db.execute('DELETE FROM search_result WHERE search_id = %s', (id,))
+    
+    # Then delete the search
     db.execute('DELETE FROM search WHERE id = %s', (id,))
+    
     db.connection.commit()
     return redirect(url_for('searches.index'))
 
