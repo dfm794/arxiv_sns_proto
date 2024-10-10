@@ -25,8 +25,10 @@ from flask import current_app, g
 #below is the modified get_db() function for postgresql
 def get_db():
     if 'db' not in g:
-        db_url = os.environ.get('DATABASE_URL', default=None)
+        db_url = os.environ.get('DATABASE_URL', default=None
+                                )
         if db_url is not None:
+            print(f"Connecting to {db_url}")
             conn = psycopg2.connect(db_url)
         else:
             conn = psycopg2.connect(
@@ -49,11 +51,23 @@ def init_db():
     with current_app.open_resource('schema.sql') as f:
         db.execute(f.read().decode('utf8'))
 
+    db.connection.commit()
+
+def check_tables():
+    db = get_db()
+    db.execute("""
+        SELECT table_name 
+        FROM information_schema.tables 
+        WHERE table_schema = 'public'
+    """)
+    tables = db.fetchall()
+    print("Existing tables:", [table[0] for table in tables])
 
 @click.command('init-db')
 def init_db_command():
     """Clear the existing data and create new tables."""
     init_db()
+    check_tables()
     click.echo('Initialized the database.')
 
 def init_app(app):
