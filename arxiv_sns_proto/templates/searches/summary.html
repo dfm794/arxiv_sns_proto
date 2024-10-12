@@ -6,12 +6,7 @@
 
 {% block content %}
   <article class="summary">
-    <header>
-      <div>
-        <h2>{{ title }}</h2>
-        <div class="about">ID: {{ id }}</div>
-      </div>
-    </header>
+
     <p class="body">{{ summary }}</p>
     <hr>
     <a class="action" href="{{ url_for('searches.index') }}">Back to Searches</a>
