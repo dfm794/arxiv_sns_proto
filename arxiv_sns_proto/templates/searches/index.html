@@ -27,7 +27,7 @@
             <h3>{{ result['title'] }}</h3>
             <p>Authors: {{ result['authors']|join(', ') }}</p>
             <p>
-              <a href="{{ result['arxiv_url'] }}" target="_blank">arXiv</a> | 
+              <a href="{{ result['arxiv_url'] }}" target="_blank">Abstract</a> | 
               <a href="{{ result['pdf_url'] }}" target="_blank">PDF</a> |
               <a class="action" href="{{ url_for('searches.summary', id=result['id']) }}">Summary</a>
             </p>
@@ -42,7 +42,9 @@
       <hr>
     {% endif %}
   {% endfor %}
+  <hr>
   <div>
+    <h1>User Instructions:</h1>
     <p>Here one may enter searches that are recorded under the logged in user id</p>
     <p>Search results will appear under each search query</p>
   </div>
