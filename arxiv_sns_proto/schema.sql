@@ -23,5 +23,6 @@ CREATE TABLE search_result (
   authors TEXT[] NOT NULL,
   arxiv_url TEXT NOT NULL,
   pdf_url TEXT NOT NULL,
+  pdf_summary TEXT NOT NULL,
   FOREIGN KEY (search_id) REFERENCES search (id)
 );

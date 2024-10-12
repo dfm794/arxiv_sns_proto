@@ -7,6 +7,7 @@ from werkzeug.exceptions import abort
 
 from .auth import login_required
 from .db import get_db
+from arxiv_summary.summarize_pdf import prep_pdf_text_for_summarization, summarize_pdf
 
 bp = Blueprint('searches', __name__)
 
@@ -31,9 +32,10 @@ def index():
     # Fetch search results for each search
     for search in searches:
         db.execute(
-            'SELECT title, authors, arxiv_url, pdf_url'
+            'SELECT id, title, authors, arxiv_url, pdf_url'
             ' FROM search_result'
-            ' WHERE search_id = %s',
+            ' WHERE search_id = %s'
+            ' ORDER BY title DESC',
             (search['id'],)
         )
         results = db.fetchall()
@@ -43,12 +45,11 @@ def index():
         search_data['results'] = results
         searches_with_results.append(search_data)
     
-    print(f'searches_with_results: {searches_with_results}')
     return render_template('searches/index.html', searches=searches_with_results)
 
 def perform_arxiv_search(query_string, max_results=10):
     url = os.getenv('CLOUDAMQP_URL', 'localhost')
-    if url is not 'localhost':
+    if url != 'localhost':
             params = pika.URLParameters(url)
             connection = pika.BlockingConnection(params)
     else:
@@ -119,9 +120,9 @@ def create():
             # Insert search results into the database
             for result in search_results:
                 db.execute(
-                    'INSERT INTO search_result (search_id, title, authors, arxiv_url, pdf_url)'
-                    ' VALUES (%s, %s, %s, %s, %s)',
-                    (search_id, result['title'], result['authors'], result['arxiv_url'], result['pdf_url'])
+                    'INSERT INTO search_result (search_id, title, authors, arxiv_url, pdf_url, pdf_summary)'
+                    ' VALUES (%s, %s, %s, %s, %s, %s)',
+                    (search_id, result['title'], result['authors'], result['arxiv_url'], result['pdf_url'], "")
                 )
             db.connection.commit()
             
@@ -180,9 +181,9 @@ def update(id):
             # Insert new search results into the database
             for result in search_results:
                 db.execute(
-                    'INSERT INTO search_result (search_id, title, authors, arxiv_url, pdf_url)'
-                    ' VALUES (%s, %s, %s, %s, %s)',
-                    (id, result['title'], result['authors'], result['arxiv_url'], result['pdf_url'])
+                    'INSERT INTO search_result (search_id, title, authors, arxiv_url, pdf_url, pdf_summary  )'
+                    ' VALUES (%s, %s, %s, %s, %s, %s)',
+                    (id, result['title'], result['authors'], result['arxiv_url'], result['pdf_url'], "")
                 )
             
             db.connection.commit()
@@ -205,4 +206,41 @@ def delete(id):
     db.connection.commit()
     return redirect(url_for('searches.index'))
 
+@bp.route('/<int:id>/summary', methods=['GET'])
+@login_required
+def summary(id):
+    db = get_db()
+    db.execute(
+        'SELECT sr.id, sr.title, sr.pdf_url, sr.pdf_summary'
+        ' FROM search_result sr JOIN search s ON sr.search_id = s.id'
+        ' WHERE sr.id = %s AND s.user_id = %s',
+        (id, g.user[0])
+    )
+    result = db.fetchone()
 
+    if result is None:
+        abort(404, f"Search result id {id} doesn't exist or doesn't belong to you.")
+
+    summary = result['pdf_summary']
+
+    if summary == "":
+        # Retrieve and summarize the PDF
+        pdf_url = result['pdf_url']
+        try:
+            text = prep_pdf_text_for_summarization(pdf_url)
+            summary = summarize_pdf(text)
+
+            # Update the database with the new summary
+            db.execute(
+                'UPDATE search_result SET pdf_summary = %s WHERE id = %s',
+                (summary, id)
+            )
+            db.connection.commit()
+        except Exception as e:
+            flash(f"Error processing PDF: {str(e)}")
+            summary = "Error occurred while processing the PDF."
+
+    return render_template('searches/summary.html', 
+                           id=id, 
+                           summary=summary, 
+                           title=result['title'])
