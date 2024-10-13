@@ -17,7 +17,7 @@ class ArxivQueryServer():
     def __init__(self, url='localhost', query_queue='arxiv_query'):
         self.url = url
         self.query_queue = query_queue
-        if self.url is not 'localhost':
+        if self.url != 'localhost':
             self.params = pika.URLParameters(self.url)
             self.connection = pika.BlockingConnection(self.params)
         else:
