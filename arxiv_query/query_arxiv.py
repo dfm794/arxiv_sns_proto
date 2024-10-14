@@ -53,7 +53,11 @@ class ArxivQueryServer():
 
 def arxiv_query(search_query, start=0, max_results=10):
     base_url = 'http://export.arxiv.org/api/query?'
-    query = 'search_query="%s"&start=%i&max_results=%i' % (search_query, start, max_results)
+    #encode the search query to handle spaces and special characters
+    #and prepend all: if there are no colons in the search query
+    if ':' not in search_query:
+        search_query = 'all:' + search_query
+    query = 'search_query="%s"&start=%i&max_results=%i' % (urllib.parse.quote_plus(search_query), start, max_results)
     url = base_url + query
     #print(url)
     url = url.replace(' ', '%20')

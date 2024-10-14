@@ -103,6 +103,9 @@ def create():
             flash(error)
         else:
             db = get_db()
+            #and prepend all: if there are no colons in the search query
+            if ':' not in search_query:
+                search_query = 'all:' + search_query
             db.execute(
                 'INSERT INTO search (search_query, user_id)'
                 ' VALUES (%s, %s)',
