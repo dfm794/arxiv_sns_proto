@@ -42,6 +42,9 @@ def create_app(test_config=None):
     app.register_blueprint(searches.bp)
     app.add_url_rule('/', endpoint='index')
 
+    from . import metrics
+    app.register_blueprint(metrics.bp)
+    
     # a simple page that says hello
     @app.route('/live_check')
     def live_check():
