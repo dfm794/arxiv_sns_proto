@@ -12,10 +12,12 @@
   </form>
   <hr>
   <div>
-    <p> Here one may enter a new search. Specfic format will change with app development but for now it's just a string.</p>
-    <p> As a resonable example, we may specify author, a time frame, a title or contents</p>
+    <p> Here one may enter a new search. Format follows the Arxiv API format details can be found <a href="https://arxiv.org/help/api/user-manual#query_details">here</a>.</p>
+    <p> As a reasonable example, we may specify author, a title or abstract.</p>
     <p> for example</p>
-    <p> author: "hinton", before:1992, title:'boltzman', contains:"in physics, a model that" </p>
+    <p> au:"hinton" ti:"boltzman" abs:"in physics, a model that" </p>
+    <p> if the search is just text with no colon keys, it will apply to all keys</p>
+    <p> Note that it is important that no spaces exist between the colon and the search text, otherwise the key, such as 'au:' will be interpreted as part of the search text.</p>
   </div>
 {% endblock %}
 
