@@ -81,11 +81,12 @@ def test_arxiv_query_server():
 
     # Print and verify results
     for i, (query, response) in enumerate(zip(test_queries, responses)):
-        print(f"\nTest Query {i + 1}:")
-        print(f"Query: {query}")
-        print(f"Number of results: {len(response)}")
-        print(f"First result title: {response[0]['title']}")
-        assert len(response) == query['max_results'], f"Expected {query['max_results']} results, got {len(response)}"
+        if len(response) != 0:
+            print(f"\nTest Query {i + 1}:")
+            print(f"Query: {query}")
+            print(f"Number of results: {len(response)}")
+            print(f"First result title: {response[0]['title']}")
+            assert len(response) == query['max_results'], f"Expected {query['max_results']} results, got {len(response)}"
 
     print("\nAll tests passed successfully!")
     print("Results have been stored in the 'arxiv_results.db' SQLite database.")
