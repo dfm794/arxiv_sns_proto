@@ -5,13 +5,18 @@ import time
 import sqlite3
 import os
 
-def test_arxiv_query_server(host='localhost', queue_name='arxiv_query'):
-    params = pika.URLParameters(host)
-    connection = pika.BlockingConnection(params)
-    #connection = pika.BlockingConnection(pika.ConnectionParameters(host=host))
-    channel = connection.channel()
+#CLOUDAMQP_URL=amqps://towqymhu:RtvPXzpZXHdT7dn5m_F9aGjHNTE9u_Yt@toad.rmq.cloudamqp.com/towqymhu
 
+def test_arxiv_query_server(host='localhost', queue_name='arxiv_query'):
+
+    #connection = pika.BlockingConnection(pika.ConnectionParameters(host=host))
+    if host != 'localhost':
+        params = pika.URLParameters(host)
+        connection = pika.BlockingConnection(params)
+    else:
+        connection = pika.BlockingConnection()
     # Declare a temporary queue for receiving responses
+    channel = connection.channel()
     result = channel.queue_declare(queue='', exclusive=True)
     callback_queue = result.method.queue
 
